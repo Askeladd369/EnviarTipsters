@@ -22,8 +22,7 @@ admins_autorizados = [1142604997, 1209577470, 1762748618]  # Reemplazar con los 
 app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 # Ruta donde se guardará el archivo Excel
-excel_file_path ="C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx" # "C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx" 
-
+excel_file_path = "C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx" #"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx"
 # Función para verificar si el usuario es un admin autorizado
 def es_admin(usr_id):
     return usr_id in admins_autorizados
@@ -261,6 +260,8 @@ async def manejar_imagen(client, message: Message):
         await message.reply(f"No se encontró el tipster '{nombre_tipster}' en los datos.")
         return
 
+    imagen_path = None
+
     try:
         # Obtener los grupos asociados al tipster
         grupos = tipster_info.get('grupos', [])
@@ -293,6 +294,7 @@ async def manejar_imagen(client, message: Message):
                 continue
 
             for canal in canal_info:
+                imagen_con_marca = None
                 try:
                     marca_agua = canal['marca_agua']
                     imagen_con_marca = agregar_marca_agua(imagen_path, marca_agua)
@@ -307,18 +309,19 @@ async def manejar_imagen(client, message: Message):
                 
                 finally:
                     # Eliminar la imagen con marca de agua
-                    if os.path.exists(imagen_con_marca):
+                    if imagen_con_marca and os.path.exists(imagen_con_marca):
                         os.remove(imagen_con_marca)
-
-        # Eliminar la imagen original
-        if os.path.exists(imagen_path):
-            os.remove(imagen_path)
-        logging.info(f"Imagen original eliminada: {imagen_path}")
 
     except Exception as e:
         logging.error(f"Error al manejar la imagen: {str(e)}")
         if message.chat.type == "private":
             await message.reply(f"Error al manejar la imagen: {str(e)}")
+    
+    finally:
+        # Asegurarse de que la imagen original sea eliminada incluso si ocurre un error
+        if imagen_path and os.path.exists(imagen_path):
+            os.remove(imagen_path)
+        logging.info(f"Imagen original eliminada: {imagen_path}")
 
 # Función para enviar la imagen al canal privado
 async def enviar_imagen_a_canal_privado(client, message, tipster, imagen_path):
@@ -334,15 +337,6 @@ async def enviar_imagen_a_canal_privado(client, message, tipster, imagen_path):
         logging.error(f"Error al enviar la imagen al canal privado: {str(e)}")
         if message.chat.type == "private":
             await message.reply(f"Error al enviar la imagen al canal privado: {str(e)}")
-
-        if os.path.exists(imagen_path):
-            os.remove(imagen_path)
-        logging.info(f"Imagen original eliminada: {imagen_path}")
-
-    except Exception as e:
-        logging.error(f"Error al manejar la imagen: {str(e)}")
-        if message.chat.type == "private":
-            await message.reply(f"Error al manejar la imagen: {str(e)}")
 
 
 # Función para generar el mensaje de estadísticas
