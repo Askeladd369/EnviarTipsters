@@ -22,7 +22,7 @@ admins_autorizados = [1142604997, 1209577470, 1762748618]  # Reemplazar con los 
 app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 # Ruta donde se guardará el archivo Excel
-excel_file_path = "C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx" #"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx"
+excel_file_path = "C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx" #"C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx"
 # Función para verificar si el usuario es un admin autorizado
 def es_admin(usr_id):
     return usr_id in admins_autorizados
