@@ -13,16 +13,21 @@ logging.basicConfig(
 # Configurar parámetros del bot
 api_id = "22823293"
 api_hash = "c110fb4d3ba8473643b8e33e1c81be1d"
-bot_token = "7165468466:AAFPgIY2H89jbdK8kx_VW5KJVAz1xvkzm68"
-canal_privado_id = "-1002431937420"  # ID del canal privado donde se envían las imágenes originales
+bot_token = "7472327662:AAEo_XSXk8s_BrDfhvlc51HBR0epE767h7E"
+canal_privado_id = "-1002471002368"  # ID del canal privado donde se envían las imágenes originales
 canal_privado_id = int(canal_privado_id)
+# Lista de administradores autorizados (IDs de usuario)
+admins_autorizados = [1142604997, 1209577470, 1762748618]  # Reemplazar con los IDs de los administradores
 
 app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 # Ruta donde se guardará el archivo Excel
-excel_file_path = "C:\\Users\\Administrator\\EnviarTIpsters\\excel.xlsx"
+excel_file_path ="C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx" # "C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx" 
 
-# Función para leer los datos desde las tres hojas del archivo Excel
+# Función para verificar si el usuario es un admin autorizado
+def es_admin(usr_id):
+    return usr_id in admins_autorizados
+
 # Función para leer y procesar los datos del archivo Excel
 def leer_datos_excel():
     try:
@@ -112,6 +117,11 @@ def crear_botones_tipsters(tipsters, page=1, botones_por_pagina=10):
 # Comando para mostrar el menú de tipsters
 @app.on_message(filters.command("menu"))
 async def mostrar_menu(client, message: Message):
+
+    if not es_admin(message.from_user.id):
+        await message.reply("No tienes permiso para usar este bot.")
+        return
+    
     try:
         # Verificamos si los datos de tipsters están disponibles
         if not tipsters_data:
@@ -129,10 +139,16 @@ async def mostrar_menu(client, message: Message):
         logging.error(f"Error al mostrar el menú: {str(e)}")
         await message.reply(f"Hubo un error al mostrar el menú: {str(e)}")
 
-# Manejar la selección del tipster
+
+# Manejar la selección del tipster desde los botones
 @app.on_callback_query(filters.regex(r"^tipster:"))
 async def seleccionar_tipster(client, callback_query):
+    if not es_admin(callback_query.from_user.id):
+        await callback_query.answer("No tienes permiso para usar este bot.", show_alert=True)
+        return
     global tipster_seleccionado
+
+    # Extraer el nombre del tipster del callback data
     tipster_seleccionado = callback_query.data.split(":")[1]
 
     # Confirmar la selección del tipster
@@ -143,6 +159,11 @@ async def seleccionar_tipster(client, callback_query):
 # Manejar el cambio de página
 @app.on_callback_query(filters.regex(r"^page:"))
 async def cambiar_pagina(client, callback_query):
+
+    if not es_admin(callback_query.from_user.id):
+        await callback_query.answer("No tienes permiso para usar este bot.", show_alert=True)
+        return
+    
     page = int(callback_query.data.split(":")[1])
 
     try:
@@ -166,6 +187,9 @@ async def cambiar_pagina(client, callback_query):
 # Comando para subir un nuevo archivo Excel y actualizar tanto la hoja 'Tipsters' como 'Grupos'
 @app.on_message(filters.command("subir_excel") & filters.document)
 async def upload_excel(client, message: Message):
+    if not es_admin(message.from_user.id):
+        await message.reply("No tienes permiso para usar este bot.")
+        return
     global tipsters_data, grupos_canales  # Actualizar variables globales
     if message.document.mime_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
         try:
@@ -211,7 +235,6 @@ async def upload_excel(client, message: Message):
         await message.reply("Por favor, sube un archivo Excel válido (.xlsx).")
 
 
-
 # Función auxiliar para verificar si un valor es NaN
 def is_nan(value):
     return value != value
@@ -219,40 +242,45 @@ def is_nan(value):
 # Manejar el envío de imágenes
 @app.on_message(filters.photo)
 async def manejar_imagen(client, message: Message):
+    if not es_admin(message.from_user.id):
+        await message.reply("No tienes permiso para enviar imágenes.")
+        return
+    
     global tipster_seleccionado
 
-    if tipster_seleccionado is None:
-        if message.chat.type == "private":
-            await message.reply("Por favor, selecciona primero un tipster usando el menú de botones.")
+    # Verificar si la imagen viene con un texto (caption) que indique el tipster
+    if message.caption:
+        nombre_tipster = message.caption.strip()
+        tipster_info = tipsters_data.get(nombre_tipster)
+    else:
+        # Si no hay texto, verificar si hay un tipster seleccionado desde el menú
+        nombre_tipster = tipster_seleccionado
+        tipster_info = tipsters_data.get(tipster_seleccionado)
+
+    if tipster_info is None:
+        await message.reply(f"No se encontró el tipster '{nombre_tipster}' en los datos.")
         return
 
     try:
-        # Buscar el tipster seleccionado en la lista de datos cargados
-        tipster_info = tipsters_data.get(tipster_seleccionado)
-
-        if tipster_info is None:
-            if message.chat.type == "private":
-                await message.reply(f"No se encontró el tipster '{tipster_seleccionado}' en el Excel.")
-            return
-
         # Obtener los grupos asociados al tipster
         grupos = tipster_info.get('grupos', [])
 
-        if not grupos:
-            logging.error(f"No se encontraron grupos para el tipster '{tipster_seleccionado}'.")
-            if message.chat.type == "private":
-                await message.reply(f"No se encontraron grupos para el tipster '{tipster_seleccionado}'.")
-            return
-
         # Generar el mensaje con las estadísticas del tipster
-        mensaje = generar_mensaje_con_estadisticas(tipster_seleccionado, tipster_info)
+        mensaje = generar_mensaje_con_estadisticas(nombre_tipster, tipster_info)
 
         # Descargar la imagen original
         imagen_path = await client.download_media(message.photo.file_id)
         logging.info(f"Imagen original descargada: {imagen_path}")
 
-        # Enviar la imagen original al canal privado con el nombre del tipster
-        await enviar_imagen_a_canal_privado(client, message, tipster_seleccionado, imagen_path)
+        # **Enviar la imagen al canal privado con el nombre del tipster**
+        await enviar_imagen_a_canal_privado(client, message, nombre_tipster, imagen_path)
+
+        # Verificar si se encontraron grupos
+        if not grupos:
+            logging.error(f"No se encontraron grupos para el tipster '{nombre_tipster}'.")
+            if message.chat.type == "private":
+                await message.reply(f"No se encontraron grupos para el tipster '{nombre_tipster}'.")
+            return
 
         # Procesar los grupos y canales
         for grupo in grupos:
@@ -292,6 +320,29 @@ async def manejar_imagen(client, message: Message):
         if message.chat.type == "private":
             await message.reply(f"Error al manejar la imagen: {str(e)}")
 
+# Función para enviar la imagen al canal privado
+async def enviar_imagen_a_canal_privado(client, message, tipster, imagen_path):
+    try:
+        # Envía la imagen al canal privado con el nombre del tipster en la descripción
+        await client.send_photo(
+            chat_id=canal_privado_id,
+            photo=imagen_path,
+            caption=f"{tipster} - Imagen enviada automáticamente"
+        )
+        logging.info(f"Imagen enviada al canal privado: {tipster}")
+    except Exception as e:
+        logging.error(f"Error al enviar la imagen al canal privado: {str(e)}")
+        if message.chat.type == "private":
+            await message.reply(f"Error al enviar la imagen al canal privado: {str(e)}")
+
+        if os.path.exists(imagen_path):
+            os.remove(imagen_path)
+        logging.info(f"Imagen original eliminada: {imagen_path}")
+
+    except Exception as e:
+        logging.error(f"Error al manejar la imagen: {str(e)}")
+        if message.chat.type == "private":
+            await message.reply(f"Error al manejar la imagen: {str(e)}")
 
 
 # Función para generar el mensaje de estadísticas
@@ -312,8 +363,6 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
         mensaje += f"Racha: {int(datos_tipster['racha'])} días\n"
     
     return mensaje.strip()
-
-
 
 # Función para agregar la marca de agua a la imagen
 def agregar_marca_agua(imagen_path, marca_agua_path):
