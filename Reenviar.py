@@ -14,7 +14,7 @@ logging.basicConfig(
 api_id = "22823293"
 api_hash = "c110fb4d3ba8473643b8e33e1c81be1d"
 bot_token =  "7165468466:AAFPgIY2H89jbdK8kx_VW5KJVAz1xvkzm68" #"7472327662:AAEo_XSXk8s_BrDfhvlc51HBR0epE767h7E"#
-canal_privado_id =  "-1002471002368"#"-1002431937420"
+canal_privado_id =  "-1002471002368"#"-1002431937420" #
 canal_privado_id = int(canal_privado_id)
 # Lista de administradores autorizados (IDs de usuario)
 admins_autorizados = [1142604997, 1209577470, 1762748618]  # Reemplazar con los IDs de los administradores
@@ -22,7 +22,7 @@ admins_autorizados = [1142604997, 1209577470, 1762748618]  # Reemplazar con los 
 app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 # Ruta donde se guardará el archivo Excel
-excel_file_path = "C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx"#"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx"#
+excel_file_path = "C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx" #"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx"
 def es_admin(usr_id):
     return usr_id in admins_autorizados
 
