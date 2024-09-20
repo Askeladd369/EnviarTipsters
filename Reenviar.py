@@ -268,10 +268,11 @@ async def manejar_imagen(client, message: Message):
         # Generar el mensaje con las estadísticas del tipster
         mensaje = generar_mensaje_con_estadisticas(nombre_tipster, tipster_info)
 
-        # Si es un grupo de medios (varias imágenes enviadas juntas)
+        # Si es un grupo de medios (varias imágenes enviadas juntas), procesarlo una sola vez
         media_group_msgs = []
         if message.media_group_id:
             media_group_msgs = await client.get_media_group(message.chat.id, message.id)
+            logging.info(f"Procesando grupo de medios con ID: {message.media_group_id}")
         else:
             media_group_msgs.append(message)
 
@@ -300,7 +301,6 @@ async def manejar_imagen(client, message: Message):
                     marca_agua = canal_info['marca_agua']
 
                     logging.info(f"Aplicando marca de agua para el grupo '{grupo}' con la ruta '{marca_agua}' en el canal '{canal}'")
-
 
                     # Hacer una copia de la imagen original para cada grupo antes de aplicar la marca de agua
                     imagen_copia_path = imagen_path.replace(".jpg", f"_{grupo}.jpg")
@@ -366,7 +366,6 @@ async def manejar_imagen(client, message: Message):
                         logging.info(f"Imagen con marca de agua eliminada: {imagen_con_marca}")
                     except Exception as e:
                         logging.error(f"Error al eliminar la imagen con marca de agua: {imagen_con_marca}, Error: {str(e)}")
-
 
 # Función para enviar todas las imágenes al canal privado (solo el nombre del tipster como caption)
 async def enviar_imagen_a_canal_privado(client, message, tipster, media_group):
