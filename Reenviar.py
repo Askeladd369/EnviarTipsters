@@ -13,7 +13,7 @@ logging.basicConfig(
 # Configurar parámetros del bot
 api_id = "22823293"
 api_hash = "c110fb4d3ba8473643b8e33e1c81be1d"
-bot_token =  "7165468466:AAFPgIY2H89jbdK8kx_VW5KJVAz1xvkzm68" #"7472327662:AAEo_XSXk8s_BrDfhvlc51HBR0epE767h7E"#
+bot_token =  "7472327662:AAEo_XSXk8s_BrDfhvlc51HBR0epE767h7E"#"7165468466:AAFPgIY2H89jbdK8kx_VW5KJVAz1xvkzm68" #
 canal_privado_id =  "-1002471002368"#"-1002431937420" #
 canal_privado_id = int(canal_privado_id)
 # Lista de administradores autorizados (IDs de usuario)
@@ -22,7 +22,7 @@ admins_autorizados = [1142604997, 1209577470, 1762748618]  # Reemplazar con los 
 app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 # Ruta donde se guardará el archivo Excel
-excel_file_path = "C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx" #"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx"
+excel_file_path = "C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx"#"C:\\Users\\Administrator\\EnviarTipsters\\excel.xlsx" 
 def es_admin(usr_id):
     return usr_id in admins_autorizados
 
@@ -280,15 +280,15 @@ async def manejar_imagen(client, message: Message):
         media_group_privado = []
         media_group_canales = {}
 
-        for media_msg in media_group_msgs:
+        for i, media_msg in enumerate(media_group_msgs):
             try:
                 # Descargar la imagen original
                 imagen_path = await client.download_media(media_msg.photo.file_id)
                 media_paths.append(imagen_path)  # Guardar la imagen original para eliminarla más tarde
                 logging.info(f"Imagen original descargada: {imagen_path}")
 
-                # Añadir la imagen sin marca de agua para el canal privado
-                media_group_privado.append(InputMediaPhoto(imagen_path, caption=nombre_tipster if len(media_group_privado) == 0 else ""))
+                # Añadir la imagen sin marca de agua para el canal privado (solo la primera tiene el caption)
+                media_group_privado.append(InputMediaPhoto(imagen_path, caption=mensaje if i == 0 else ""))
 
                 # Aplicar la marca de agua correspondiente para cada canal y grupo
                 for grupo in grupos_tipster:
@@ -316,7 +316,7 @@ async def manejar_imagen(client, message: Message):
                         watermarked_paths[canal] = []
                     watermarked_paths[canal].append(imagen_con_marca)
 
-                    # Crear el grupo de medios para cada canal
+                    # Crear el grupo de medios para cada canal (solo el primer mensaje tiene el texto)
                     if canal not in media_group_canales:
                         media_group_canales[canal] = []
 
@@ -367,15 +367,30 @@ async def manejar_imagen(client, message: Message):
                     except Exception as e:
                         logging.error(f"Error al eliminar la imagen con marca de agua: {imagen_con_marca}, Error: {str(e)}")
 
-# Función para enviar todas las imágenes al canal privado (solo el nombre del tipster como caption)
+
+# Función para enviar todas las imágenes al canal privado (solo la primera imagen con el nombre del tipster como caption)
 async def enviar_imagen_a_canal_privado(client, message, tipster, media_group):
     try:
+        # Validar que el grupo de medios no esté vacío
+        if not media_group:
+            logging.error(f"El grupo de medios está vacío. No se enviarán imágenes para el tipster: {tipster}.")
+            return
+
+        # Asegurarse de que solo la primera imagen tenga el caption (nombre del tipster)
+        media_group[0].caption = tipster
+        for media in media_group[1:]:
+            media.caption = ""  # Eliminar el caption de las siguientes imágenes
+
+        # Enviar el grupo de medios al canal privado
         await client.send_media_group(chat_id=canal_privado_id, media=media_group)
-        logging.info(f"Imágenes enviadas al canal privado con el nombre del tipster: {tipster}")
+        logging.info(f"Se enviaron {len(media_group)} imágenes al canal privado con el nombre del tipster: {tipster}")
+
     except Exception as e:
         logging.error(f"Error al enviar las imágenes al canal privado: {str(e)}")
+        # Solo responder en chats privados para no divulgar errores en canales/grupos
         if message.chat.type == "private":
             await message.reply(f"Error al enviar las imágenes al canal privado: {str(e)}")
+
 
 
 # Función para generar el mensaje de estadísticas
