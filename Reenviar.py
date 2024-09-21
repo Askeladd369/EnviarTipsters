@@ -13,7 +13,7 @@ logging.basicConfig(
 # Configurar parámetros del bot
 api_id = "22823293"
 api_hash = "c110fb4d3ba8473643b8e33e1c81be1d"
-bot_token = "7165468466:AAFPgIY2H89jbdK8kx_VW5KJVAz1xvkzm68" #"7472327662:AAEo_XSXk8s_BrDfhvlc51HBR0epE767h7E"
+bot_token = "7165468466:AAFPgIY2H89jbdK8kx_VW5KJVAz1xvkzm68" #"7472327662:AAEo_XSXk8s_BrDfhvlc51HBR0epE767h7E" 
 canal_privado_id =  "-1002471002368"#"-1002431937420" #
 canal_privado_id = int(canal_privado_id)
 # Lista de administradores autorizados (IDs de usuario)
@@ -244,6 +244,9 @@ async def upload_excel(client, message: Message):
 def is_nan(value):
     return value != value
 
+# Mantener un registro global de media groups ya procesados para evitar duplicaciones
+procesados_media_groups = set()
+
 @app.on_message(filters.photo)
 async def manejar_imagen(client, message: Message):
     if not es_admin(message.from_user.id):
@@ -274,6 +277,12 @@ async def manejar_imagen(client, message: Message):
         # Si es un grupo de medios (varias imágenes enviadas juntas), procesarlo una sola vez
         media_group_msgs = []
         if message.media_group_id:
+            # Evitar procesar el grupo de medios varias veces
+            if message.media_group_id in procesados_media_groups:
+                logging.info(f"Grupo de medios ya procesado: {message.media_group_id}")
+                return  # Evitar procesar el mismo grupo de medios dos veces
+            procesados_media_groups.add(message.media_group_id)
+
             media_group_msgs = await client.get_media_group(message.chat.id, message.id)
             logging.info(f"Procesando grupo de medios con ID: {message.media_group_id}")
         else:
@@ -283,7 +292,7 @@ async def manejar_imagen(client, message: Message):
         media_group_privado = []
         media_group_canales = {}
 
-        # El primer mensaje del grupo de medios es el que llevará el caption (solo el nombre del tipster para el canal privado)
+        # El primer mensaje del grupo de medios es el que llevará el caption
         is_first_image_privado = True  # Controla si se ha enviado el caption en el canal privado
         is_first_image_canal = {}  # Controla si se ha enviado el caption en cada canal específico
 
