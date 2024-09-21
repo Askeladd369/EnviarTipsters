@@ -256,15 +256,20 @@ async def manejar_imagen(client, message: Message):
         await message.reply("No has seleccionado un tipster. Usa /menu para seleccionar uno.")
         return
 
+    tipster_info = tipsters_data.get(tipster_seleccionado)  # Obtener los datos del tipster seleccionado
+    if not tipster_info:
+        await message.reply(f"No se encontraron datos para el tipster '{tipster_seleccionado}'.")
+        return
+
     media_paths = []  # Guardar los caminos de las imágenes originales para eliminarlas luego
     watermarked_paths = {}  # Guardar los caminos de las imágenes con marca de agua para cada canal
 
     try:
         # Obtener los grupos asociados al tipster
-        grupos_tipster = [grupo.lower().strip() for grupo in tipster_seleccionado['grupos']]  # Normalizar los grupos
+        grupos_tipster = [grupo.lower().strip() for grupo in tipster_info['grupos']]  # Normalizar los grupos
 
         # Generar el mensaje con las estadísticas del tipster
-        mensaje = generar_mensaje_con_estadisticas(tipster_seleccionado, tipster_seleccionado)
+        mensaje = generar_mensaje_con_estadisticas(tipster_seleccionado, tipster_info)
 
         # Si es un grupo de medios (varias imágenes enviadas juntas), procesarlo una sola vez
         media_group_msgs = []
@@ -289,7 +294,7 @@ async def manejar_imagen(client, message: Message):
                 logging.info(f"Imagen original descargada: {imagen_path}")
 
                 # Añadir la imagen sin marca de agua para el canal privado
-                caption = tipster_seleccionado if is_first_image else ""
+                caption = mensaje if is_first_image else ""
                 media_group_privado.append(InputMediaPhoto(imagen_path, caption=caption))
                 is_first_image = False  # Solo el primer mensaje tiene el caption
 
