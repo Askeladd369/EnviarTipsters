@@ -246,14 +246,21 @@ async def manejar_imagen(client, message: Message):
     
     global tipster_seleccionado
 
+    # Inicializar el nombre del tipster como None
+    nombre_tipster = None
+    
     # Verificar si la imagen viene con un texto (caption) que indique el tipster
     if message.caption:
         nombre_tipster = message.caption.strip()
         tipster_info = tipsters_data.get(nombre_tipster)
-    else:
+    elif tipster_seleccionado:
         nombre_tipster = tipster_seleccionado
         tipster_info = tipsters_data.get(tipster_seleccionado)
+    else:
+        await message.reply("No se ha seleccionado un tipster ni se proporcionó un nombre en el caption.")
+        return
 
+    # Verificar si se encontró el tipster
     if tipster_info is None:
         await message.reply(f"No se encontró el tipster '{nombre_tipster}' en los datos.")
         return
@@ -280,6 +287,7 @@ async def manejar_imagen(client, message: Message):
         media_group_privado = []
         media_group_canales = {}
 
+        # Asegurarse de que solo la primera imagen tenga el caption y las demás no
         for i, media_msg in enumerate(media_group_msgs):
             try:
                 # Descargar la imagen original
