@@ -284,7 +284,8 @@ async def manejar_imagen(client, message: Message):
         media_group_canales = {}
 
         # El primer mensaje del grupo de medios es el que llevará el caption (nombre del tipster)
-        is_first_image = True
+        is_first_image_privado = True  # Controla si se ha enviado el caption en el canal privado
+        is_first_image_canal = {}  # Controla si se ha enviado el caption en cada canal específico
 
         for media_msg in media_group_msgs:
             try:
@@ -294,9 +295,9 @@ async def manejar_imagen(client, message: Message):
                 logging.info(f"Imagen original descargada: {imagen_path}")
 
                 # Añadir la imagen sin marca de agua para el canal privado
-                caption = mensaje if is_first_image else ""
+                caption = mensaje if is_first_image_privado else ""  # Solo la primera imagen tiene el caption
                 media_group_privado.append(InputMediaPhoto(imagen_path, caption=caption))
-                is_first_image = False  # Solo el primer mensaje tiene el caption
+                is_first_image_privado = False  # Solo la primera imagen lleva el caption
 
                 # Aplicar la marca de agua correspondiente para cada canal y grupo
                 for grupo in grupos_tipster:
@@ -327,12 +328,14 @@ async def manejar_imagen(client, message: Message):
                     # Crear el grupo de medios para cada canal
                     if canal not in media_group_canales:
                         media_group_canales[canal] = []
+                        is_first_image_canal[canal] = True  # Inicializar el control del caption para este canal
 
                     # Solo el primer mensaje tendrá el mensaje de estadísticas
-                    caption = mensaje if len(media_group_canales[canal]) == 0 else ""
+                    caption = mensaje if is_first_image_canal[canal] else ""
                     media_group_canales[canal].append(
                         InputMediaPhoto(imagen_con_marca, caption=caption)
                     )
+                    is_first_image_canal[canal] = False  # Solo la primera imagen de este canal tiene caption
 
             except Exception as e:
                 logging.error(f"Error al manejar la imagen: {str(e)}")
@@ -340,7 +343,9 @@ async def manejar_imagen(client, message: Message):
                     await message.reply(f"Error al manejar la imagen: {str(e)}")
 
         # Enviar todas las imágenes al canal privado
-        await enviar_imagen_a_canal_privado(client, message, tipster_seleccionado, media_group_privado)
+        if media_group_privado:
+            await client.send_media_group(chat_id=canal_privado_id, media=media_group_privado)
+            logging.info(f"Imágenes enviadas al canal privado con el nombre del tipster: {tipster_seleccionado}")
 
         # Enviar las imágenes a los canales correspondientes
         for canal, media_group in media_group_canales.items():
