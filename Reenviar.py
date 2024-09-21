@@ -141,6 +141,10 @@ async def mostrar_menu(client, message: Message):
         logging.error(f"Error al mostrar el menú: {str(e)}")
         await message.reply(f"Hubo un error al mostrar el menú: {str(e)}")
 
+# Diccionario global para almacenar el tipster seleccionado por cada usuario
+sesion_tipsters = {}
+
+
 # Manejar la selección del tipster desde los botones
 @app.on_callback_query(filters.regex(r"^tipster:"))
 async def seleccionar_tipster(client, callback_query):
@@ -151,14 +155,13 @@ async def seleccionar_tipster(client, callback_query):
     # Extraer el nombre del tipster del callback data
     tipster_seleccionado = callback_query.data.split(":")[1]
 
-    # Asociar el tipster seleccionado con el ID del administrador
-    client.storage[callback_query.from_user.id] = tipster_seleccionado
+    # Guardar el tipster seleccionado en la sesión del usuario
+    sesion_tipsters[callback_query.from_user.id] = tipster_seleccionado
 
     # Confirmar la selección del tipster
     await callback_query.message.edit_text(
         f"Has seleccionado a {tipster_seleccionado}. Ahora puedes enviar las imágenes correspondientes."
     )
-
 
 # Manejar el cambio de página
 @app.on_callback_query(filters.regex(r"^page:"))
@@ -243,13 +246,12 @@ def is_nan(value):
 
 @app.on_message(filters.photo)
 async def manejar_imagen(client, message: Message):
-
     if not es_admin(message.from_user.id):
         await message.reply("No tienes permiso para enviar imágenes.")
         return
-    
-    # Obtener el tipster seleccionado desde la sesión
-    tipster_seleccionado = client.storage.get(message.from_user.id)
+
+    # Obtener el tipster seleccionado desde la sesión del usuario
+    tipster_seleccionado = sesion_tipsters.get(message.from_user.id)
     if not tipster_seleccionado:
         await message.reply("No has seleccionado un tipster. Usa /menu para seleccionar uno.")
         return
