@@ -287,7 +287,7 @@ async def manejar_imagen(client, message: Message):
         media_group_privado = []
         media_group_canales = {}
 
-        # Asegurarse de que solo la primera imagen tenga el caption y las demás no
+        # Procesar imágenes dentro de un grupo de medios
         for i, media_msg in enumerate(media_group_msgs):
             try:
                 # Descargar la imagen original
@@ -295,8 +295,11 @@ async def manejar_imagen(client, message: Message):
                 media_paths.append(imagen_path)  # Guardar la imagen original para eliminarla más tarde
                 logging.info(f"Imagen original descargada: {imagen_path}")
 
-                # Añadir la imagen sin marca de agua para el canal privado (solo la primera tiene el caption)
-                media_group_privado.append(InputMediaPhoto(imagen_path, caption=mensaje if i == 0 else ""))
+                # Añadir la imagen al grupo de medios privado (solo la primera tiene el caption)
+                if i == 0:
+                    media_group_privado.append(InputMediaPhoto(imagen_path, caption=mensaje))
+                else:
+                    media_group_privado.append(InputMediaPhoto(imagen_path))  # Sin caption para las demás imágenes
 
                 # Aplicar la marca de agua correspondiente para cada canal y grupo
                 for grupo in grupos_tipster:
@@ -328,9 +331,10 @@ async def manejar_imagen(client, message: Message):
                     if canal not in media_group_canales:
                         media_group_canales[canal] = []
 
-                    media_group_canales[canal].append(
-                        InputMediaPhoto(imagen_con_marca, caption=mensaje if len(media_group_canales[canal]) == 0 else "")
-                    )
+                    if i == 0:
+                        media_group_canales[canal].append(InputMediaPhoto(imagen_con_marca, caption=mensaje))
+                    else:
+                        media_group_canales[canal].append(InputMediaPhoto(imagen_con_marca))  # Sin caption para las demás
 
             except Exception as e:
                 logging.error(f"Error al manejar la imagen: {str(e)}")
