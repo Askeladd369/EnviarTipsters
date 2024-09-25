@@ -408,17 +408,17 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
     mensaje = f"Tipster: {tipster}\nEstadísticas👇\n"
     
     if not is_nan(datos_tipster.get('bank_inicial')):
-        mensaje += f"Bank Inicial 🏦: ${int(datos_tipster['bank_inicial']):,}\n"
+        mensaje += f"🏦Bank Inicial: ${int(datos_tipster['bank_inicial']):,}\n"
     if not is_nan(datos_tipster.get('bank_actual')):
-        mensaje += f"Bank Actual 🏦: ${int(datos_tipster['bank_actual']):,}\n"
+        mensaje += f"🏦Bank Actual: ${int(datos_tipster['bank_actual']):,}\n"
     if not is_nan(datos_tipster.get('victorias')):
-        mensaje += f"Victorias: {int(datos_tipster['victorias'])}✅\n"
+        mensaje += f"✅Victorias: {int(datos_tipster['victorias'])}\n"
     if not is_nan(datos_tipster.get('derrotas')):
-        mensaje += f"Derrotas: {int(datos_tipster['derrotas'])}❌\n"
+        mensaje += f"❌Derrotas: {int(datos_tipster['derrotas'])}\n"
     if not is_nan(datos_tipster.get('efectividad')):
-        mensaje += f"Efectividad: {int(datos_tipster['efectividad'])}% 📊\n"
+        mensaje += f"📊Efectividad: {int(datos_tipster['efectividad'])}%\n"
     if not is_nan(datos_tipster.get('racha')):
-        mensaje += f"Racha: {int(datos_tipster['racha'])} días\n"
+        mensaje += f"Dias positivo: {int(datos_tipster['racha'])} días\n"
     
     return mensaje.strip()
 
