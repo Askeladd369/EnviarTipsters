@@ -405,22 +405,37 @@ async def enviar_imagen_a_canal_privado(client, message, tipster, media_group):
 
 # Función para generar el mensaje de estadísticas
 def generar_mensaje_con_estadisticas(tipster, datos_tipster):
-    mensaje = f"Tipster: {tipster}\nEstadísticas👇\n"
-    
-    if not is_nan(datos_tipster.get('bank_inicial')):
-        mensaje += f"🏦Bank Inicial: ${int(datos_tipster['bank_inicial']):,}\n"
+    # Obtener la racha y generar emojis de estrella
+    racha = int(datos_tipster.get('racha', 0))
+    racha_emojis = '⭐️' * racha
+
+    # Formato del nombre del tipster con la racha en emojis
+    mensaje = f"{tipster} ({racha_emojis})\n\n"
+
+    # Determinar el emoji del semáforo basado en la efectividad
+    efectividad = datos_tipster.get('efectividad')
+    if not is_nan(efectividad):
+        efectividad = int(efectividad)
+        if efectividad > 67:
+            semaforo_emoji = "🟢"
+        elif 30 < efectividad <= 67:
+            semaforo_emoji = "🟡"
+        else:
+            semaforo_emoji = "🔴"
+        mensaje += f"{semaforo_emoji} Efectividad: {efectividad}%\n"
+
+    # Agregar el balance (bank actual)
     if not is_nan(datos_tipster.get('bank_actual')):
-        mensaje += f"🏦Bank Actual: ${int(datos_tipster['bank_actual']):,}\n"
-    if not is_nan(datos_tipster.get('victorias')):
-        mensaje += f"✅Victorias: {int(datos_tipster['victorias'])}\n"
-    if not is_nan(datos_tipster.get('derrotas')):
-        mensaje += f"❌Derrotas: {int(datos_tipster['derrotas'])}\n"
-    if not is_nan(datos_tipster.get('efectividad')):
-        mensaje += f"📊Efectividad: {int(datos_tipster['efectividad'])}%\n"
-    if not is_nan(datos_tipster.get('racha')):
-        mensaje += f"Dias positivo: {int(datos_tipster['racha'])} días\n"
-    
+        bank_actual = int(datos_tipster['bank_actual'])
+        mensaje += f"💰Balance: ${bank_actual:,}\n"
+
+    # Agregar el record en formato (victorias - derrotas)
+    victorias = int(datos_tipster.get('victorias', 0)) if not is_nan(datos_tipster.get('victorias')) else 0
+    derrotas = int(datos_tipster.get('derrotas', 0)) if not is_nan(datos_tipster.get('derrotas')) else 0
+    mensaje += f"📊Record: ({victorias}✅-{derrotas}❌)"
+
     return mensaje.strip()
+
 
 # Función para agregar la marca de agua a la imagen
 def agregar_marca_agua(imagen_path, marca_agua_path):
