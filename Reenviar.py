@@ -428,7 +428,7 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
     # Agregar el balance (bank actual)
     bank_actual = datos_tipster.get('bank_actual')
     if bank_actual is not None and not math.isnan(bank_actual):
-        mensaje += f"Balance: ${int(bank_actual):,}\n"
+        mensaje += f"💰Balance: ${int(bank_actual):,}\n"
 
     # Agregar el record en el nuevo formato (9 ✅ - 1 ❌)
     victorias = datos_tipster.get('victorias')
