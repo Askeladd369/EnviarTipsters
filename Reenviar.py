@@ -411,7 +411,7 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
     racha_emojis = '⭐️' * racha
 
     # Formato del nombre del tipster con la racha en emojis
-    mensaje = f"{tipster} ({racha_emojis})\n\n"
+    mensaje = f"{tipster} {racha_emojis}\n\n"
 
     # Determinar el emoji del semáforo basado en la efectividad
     efectividad = datos_tipster.get('efectividad')
