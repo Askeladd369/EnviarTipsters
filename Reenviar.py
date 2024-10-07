@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, InputMediaPhoto
+import math
 
 # Configurar logging
 logging.basicConfig(
@@ -406,7 +407,7 @@ async def enviar_imagen_a_canal_privado(client, message, tipster, media_group):
 # Función para generar el mensaje de estadísticas
 def generar_mensaje_con_estadisticas(tipster, datos_tipster):
     # Obtener la racha y generar emojis de estrella
-    racha = int(datos_tipster.get('racha', 0))
+    racha = int(datos_tipster.get('racha', 0)) if not math.isnan(datos_tipster.get('racha', 0)) else 0
     racha_emojis = '⭐️' * racha
 
     # Formato del nombre del tipster con la racha en emojis
@@ -414,7 +415,7 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
 
     # Determinar el emoji del semáforo basado en la efectividad
     efectividad = datos_tipster.get('efectividad')
-    if not is_nan(efectividad):
+    if efectividad is not None and not math.isnan(efectividad):
         efectividad = int(efectividad)
         if efectividad > 67:
             semaforo_emoji = "🟢"
@@ -425,14 +426,19 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
         mensaje += f"{semaforo_emoji} Efectividad: {efectividad}%\n"
 
     # Agregar el balance (bank actual)
-    if not is_nan(datos_tipster.get('bank_actual')):
-        bank_actual = int(datos_tipster['bank_actual'])
-        mensaje += f"💰Balance: ${bank_actual:,}\n"
+    bank_actual = datos_tipster.get('bank_actual')
+    if bank_actual is not None and not math.isnan(bank_actual):
+        mensaje += f"Balance: ${int(bank_actual):,}\n"
 
-    # Agregar el record en formato (victorias - derrotas)
-    victorias = int(datos_tipster.get('victorias', 0)) if not is_nan(datos_tipster.get('victorias')) else 0
-    derrotas = int(datos_tipster.get('derrotas', 0)) if not is_nan(datos_tipster.get('derrotas')) else 0
-    mensaje += f"📊Record: ({victorias}✅-{derrotas}❌)"
+    # Agregar el record en el nuevo formato (9 ✅ - 1 ❌)
+    victorias = datos_tipster.get('victorias')
+    derrotas = datos_tipster.get('derrotas')
+
+    # Manejar NaN para victorias y derrotas
+    victorias = int(victorias) if victorias is not None and not math.isnan(victorias) else 0
+    derrotas = int(derrotas) if derrotas is not None and not math.isnan(derrotas) else 0
+
+    mensaje += f"📊 Récord: {victorias} ✅ - {derrotas} ❌"
 
     return mensaje.strip()
 
