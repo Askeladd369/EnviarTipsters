@@ -395,6 +395,9 @@ async def manejar_imagen(client, message: Message):
 
 # Función para enviar todas las imágenes al canal privado (solo el nombre del tipster como caption)
 async def enviar_imagen_a_canal_privado(client, message, tipster, media_group):
+    if message.from_user is None:
+        # Si no hay un usuario asociado al mensaje, puedes omitir la acción o realizar un manejo especial
+        return
     try:
         await client.send_media_group(chat_id=canal_privado_id, media=media_group)
         logging.info(f"Imágenes enviadas al canal privado con el nombre del tipster: {tipster}")
@@ -428,7 +431,7 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
     # Agregar el balance (bank actual)
     bank_actual = datos_tipster.get('bank_actual')
     if bank_actual is not None and not math.isnan(bank_actual):
-        mensaje += f"💰Balance: ${int(bank_actual):,}\n"
+        mensaje += f"💰 Balance: ${int(bank_actual):,}\n"
 
     # Agregar el record en el nuevo formato (9 ✅ - 1 ❌)
     victorias = datos_tipster.get('victorias')
