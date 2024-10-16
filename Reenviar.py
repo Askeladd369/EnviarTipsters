@@ -36,7 +36,7 @@ def leer_datos_excel():
         df_canales = pd.read_excel(excel_file_path, sheet_name='Canales')
 
         # Verificar que el archivo tenga las columnas esperadas en Tipsters
-        required_columns = ['Nombre', 'Bank Inicial', 'Bank Actual', 'Victorias', 'Derrotas', 'Efectividad', 'Racha']
+        required_columns = ['Nombre', 'Bank Inicial', 'Bank Actual', 'Victorias', 'Derrotas', 'Efectividad', 'Dias en racha']
         for column in required_columns:
             if column not in df_tipsters.columns:
                 raise ValueError(f"La columna '{column}' falta en la hoja 'Tipsters'.")
@@ -51,7 +51,7 @@ def leer_datos_excel():
                 'victorias': row['Victorias'],
                 'derrotas': row['Derrotas'],
                 'efectividad': row['Efectividad'],
-                'racha': row['Racha'],
+                'racha': row['Dias en racha'],
                 'grupos': []  # Inicialmente vacío, se llenará con la información de la hoja 'Grupos'
             }
 
@@ -217,7 +217,7 @@ async def upload_excel(client, message: Message):
                     'victorias': row['Victorias'],
                     'derrotas': row['Derrotas'],
                     'efectividad': row['Efectividad'],
-                    'racha': row['Racha'],
+                    'racha': row['Dias en racha'],
                     'grupos': []  # Inicialmente vacío, se llenará con la información de la hoja 'Grupos'
                 }
 
