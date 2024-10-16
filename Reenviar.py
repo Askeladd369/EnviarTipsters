@@ -36,7 +36,7 @@ def leer_datos_excel():
         df_canales = pd.read_excel(excel_file_path, sheet_name='Canales')
 
         # Verificar que el archivo tenga las columnas esperadas en Tipsters
-        required_columns = ['Tipster', 'Bank Inicial', 'Bank Actual', 'Victorias', 'Derrotas', 'Efectividad', 'Racha']
+        required_columns = ['Nombre', 'Bank Inicial', 'Bank Actual', 'Victorias', 'Derrotas', 'Efectividad', 'Racha']
         for column in required_columns:
             if column not in df_tipsters.columns:
                 raise ValueError(f"La columna '{column}' falta en la hoja 'Tipsters'.")
@@ -44,7 +44,7 @@ def leer_datos_excel():
         # Procesar los tipsters y sus estadísticas
         tipsters_data = {}
         for _, row in df_tipsters.iterrows():
-            tipster = row['Tipster']
+            tipster = row['Nombre']
             tipsters_data[tipster] = {
                 'bank_inicial': row['Bank Inicial'],
                 'bank_actual': row['Bank Actual'],
@@ -57,7 +57,7 @@ def leer_datos_excel():
 
         # Procesar los grupos (hoja 'Grupos')
         for _, row in df_grupos.iterrows():
-            tipster = row['Tipster']
+            tipster = row['Nombre']
             # Normalizar los nombres de los grupos (convertir a minúsculas y eliminar espacios en blanco)
             grupos = [row[grupo].strip().lower() for grupo in df_grupos.columns[:-1] if pd.notna(row[grupo])]
             if tipster in tipsters_data:
@@ -210,7 +210,7 @@ async def upload_excel(client, message: Message):
             # Actualizar la información de los tipsters (hoja 'Tipsters')
             tipsters_data = {}  # Reinicializamos la data de tipsters
             for _, row in df_tipsters_actualizado.iterrows():
-                tipster = row['Tipster']
+                tipster = row['Nombre']
                 tipsters_data[tipster] = {
                     'bank_inicial': row['Bank Inicial'],
                     'bank_actual': row['Bank Actual'],
@@ -223,11 +223,11 @@ async def upload_excel(client, message: Message):
 
             # Procesar los grupos (hoja 'Grupos')
             columnas_grupos = df_grupos_actualizado.columns[:-1]  # Todas las columnas menos la última
-            tipster_grupos = df_grupos_actualizado['Tipster']     # Última columna que contiene los tipsters
+            tipster_grupos = df_grupos_actualizado['Nombre']     # Última columna que contiene los tipsters
 
             # Actualizar los grupos en tipsters_data
             for _, row in df_grupos_actualizado.iterrows():
-                tipster = row['Tipster']
+                tipster = row['Nombre']
                 grupos = [row[grupo] for grupo in columnas_grupos if pd.notna(row[grupo])]  # Grupos no vacíos
                 if tipster in tipsters_data:
                     tipsters_data[tipster]['grupos'] = grupos  # Actualizar los grupos de cada tipster
