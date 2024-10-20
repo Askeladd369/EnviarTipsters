@@ -429,12 +429,14 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
         mensaje += f"{semaforo_emoji} Efectividad: {efectividad}%\n"
 
     # Agregar el balance (bank actual) con símbolo + o -
-    bank_inicial = datos_tipster.get('bank_inicial')
     bank_actual = datos_tipster.get('bank_actual')
-    if bank_actual is not None and not math.isnan(bank_actual) and bank_inicial is not None and not math.isnan(bank_inicial):
-        diferencia = bank_actual - bank_inicial
-        simbolo = "+" if diferencia > 0 else "-" if diferencia < 0 else ""
-        mensaje += f"💰 Balance: {simbolo}${abs(int(bank_actual)):,}\n"
+    
+    if bank_actual is not None:
+            # Formatear el mensaje de bank actual con el símbolo correspondiente
+            simbolo = "+" if bank_actual > 0 else ""
+            
+            # Mostrar el valor de bank_actual tal como está, añadiendo el símbolo si es positivo
+            stats_message += f"💰 Balance: {simbolo}${bank_actual:.2f} 💵\n"
 
     # Agregar el record en el nuevo formato (9 ✅ - 1 ❌) solo si hay datos
     victorias = datos_tipster.get('victorias')
