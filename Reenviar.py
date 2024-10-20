@@ -3,9 +3,6 @@ import logging
 import pandas as pd
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, InputMediaPhoto
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
 import math
 
 # Configurar logging
@@ -26,27 +23,17 @@ admins_autorizados = [1142604997, 1209577470, 1762748618]  # Reemplazar con los 
 app = Client("my_bot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
 
 # Ruta donde se guardará el archivo Excel
+excel_file_path = "C:\\Users\\Administrator\\EnviarTipsters\\excel tipstersbets.xlsx" #"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx"#
 def es_admin(usr_id):
     return usr_id in admins_autorizados
 
 # Función para leer y procesar los datos del archivo Excel
-# Función para conectar y leer los datos de Google Sheets
-def leer_datos_google_sheets():
+def leer_datos_excel():
     try:
-        # Autenticación y conexión con Google Sheets
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
-        client = gspread.authorize(creds)
-
-        # Abrir el archivo de Google Sheets
-        sheet_tipsters = client.open("Nombre_de_tu_Hoja").worksheet('Tipsters')
-        sheet_grupos = client.open("Nombre_de_tu_Hoja").worksheet('Grupos')
-        sheet_canales = client.open("Nombre_de_tu_Hoja").worksheet('Canales')
-
-        # Leer los datos de cada hoja
-        df_tipsters = pd.DataFrame(sheet_tipsters.get_all_records())
-        df_grupos = pd.DataFrame(sheet_grupos.get_all_records())
-        df_canales = pd.DataFrame(sheet_canales.get_all_records())
+        # Leer las hojas de Tipsters, Grupos y Canales
+        df_tipsters = pd.read_excel(excel_file_path, sheet_name='Tipsters')
+        df_grupos = pd.read_excel(excel_file_path, sheet_name='Grupos')
+        df_canales = pd.read_excel(excel_file_path, sheet_name='Canales')
 
         # Verificar que el archivo tenga las columnas esperadas en Tipsters
         required_columns = ['Nombre', 'Bank Inicial', 'Bank Actual', 'Victorias', 'Derrotas', 'Efectividad', 'Dias en racha']
@@ -97,12 +84,16 @@ def leer_datos_google_sheets():
         # Retornar los datos procesados
         return tipsters_data, grupos_canales
 
+    except FileNotFoundError as e:
+        print(f"Error: No se encontró el archivo Excel. Asegúrate de que el archivo esté en la ruta correcta.")
+        raise e
     except Exception as e:
-        print(f"Error al leer los datos de Google Sheets: {str(e)}")
+        print(f"Error al leer los datos del archivo Excel: {str(e)}")
         raise e
 
+
 # Cargar los datos del Excel al iniciar el bot
-tipsters_data, grupos_canales = leer_datos_google_sheets()
+tipsters_data, grupos_canales = leer_datos_excel()
 
 # Crear los botones paginados
 def crear_botones_tipsters(tipsters, page=1, botones_por_pagina=10):
@@ -154,6 +145,7 @@ async def mostrar_menu(client, message: Message):
 # Diccionario global para almacenar el tipster seleccionado por cada usuario
 sesion_tipsters = {}
 
+
 # Manejar la selección del tipster desde los botones
 @app.on_callback_query(filters.regex(r"^tipster:"))
 async def seleccionar_tipster(client, callback_query):
@@ -198,6 +190,56 @@ async def cambiar_pagina(client, callback_query):
     except Exception as e:
         logging.error(f"Error al cambiar de página: {str(e)}")
         await callback_query.message.edit_text(f"Hubo un error al cambiar de página: {str(e)}")
+
+# Comando para subir un nuevo archivo Excel y actualizar tanto la hoja 'Tipsters' como 'Grupos'
+@app.on_message(filters.command("subir_excel") & filters.document)
+async def upload_excel(client, message: Message):
+    if not es_admin(message.from_user.id):
+        await message.reply("No tienes permiso para usar este bot.")
+        return
+    global tipsters_data, grupos_canales  # Actualizar variables globales
+    if message.document.mime_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        try:
+            # Descargar el archivo de manera asíncrona
+            file_path = await message.download(file_name=excel_file_path)
+
+            # Cargar las hojas actualizadas
+            df_tipsters_actualizado = pd.read_excel(excel_file_path, sheet_name='Tipsters')  # Cargar hoja Tipsters
+            df_grupos_actualizado = pd.read_excel(excel_file_path, sheet_name='Grupos')      # Cargar hoja Grupos
+
+            # Actualizar la información de los tipsters (hoja 'Tipsters')
+            tipsters_data = {}  # Reinicializamos la data de tipsters
+            for _, row in df_tipsters_actualizado.iterrows():
+                tipster = row['Nombre']
+                tipsters_data[tipster] = {
+                    'bank_inicial': row['Bank Inicial'],
+                    'bank_actual': row['Bank Actual'],
+                    'victorias': row['Victorias'],
+                    'derrotas': row['Derrotas'],
+                    'efectividad': row['Efectividad'],
+                    'racha': row['Dias en racha'],
+                    'grupos': []  # Inicialmente vacío, se llenará con la información de la hoja 'Grupos'
+                }
+
+            # Procesar los grupos (hoja 'Grupos')
+            columnas_grupos = df_grupos_actualizado.columns[:-1]  # Todas las columnas menos la última
+            tipster_grupos = df_grupos_actualizado['Nombre']     # Última columna que contiene los tipsters
+
+            # Actualizar los grupos en tipsters_data
+            for _, row in df_grupos_actualizado.iterrows():
+                tipster = row['Nombre']
+                grupos = [row[grupo] for grupo in columnas_grupos if pd.notna(row[grupo])]  # Grupos no vacíos
+                if tipster in tipsters_data:
+                    tipsters_data[tipster]['grupos'] = grupos  # Actualizar los grupos de cada tipster
+
+            await message.reply("Las hojas 'Tipsters' y 'Grupos' han sido actualizadas correctamente.")
+            logging.info(f"Archivo Excel descargado y hojas 'Tipsters' y 'Grupos' actualizadas en: {file_path}")
+
+        except Exception as e:
+            await message.reply(f"Hubo un error al subir el archivo Excel: {str(e)}")
+            logging.error(f"Error al subir el archivo Excel: {str(e)}")
+    else:
+        await message.reply("Por favor, sube un archivo Excel válido (.xlsx).")
 
 # Función auxiliar para verificar si un valor es NaN
 def is_nan(value):
@@ -350,6 +392,7 @@ async def manejar_imagen(client, message: Message):
                     except Exception as e:
                         logging.error(f"Error al eliminar la imagen con marca de agua: {imagen_con_marca}, Error: {str(e)}")
 
+
 # Función para enviar todas las imágenes al canal privado (solo el nombre del tipster como caption)
 async def enviar_imagen_a_canal_privado(client, message, tipster, media_group):
     if message.from_user is None:
@@ -362,6 +405,7 @@ async def enviar_imagen_a_canal_privado(client, message, tipster, media_group):
         logging.error(f"Error al enviar las imágenes al canal privado: {str(e)}")
         if message.chat.type == "private":
             await message.reply(f"Error al enviar las imágenes al canal privado: {str(e)}")
+
 
 # Función para generar el mensaje de estadísticas
 def generar_mensaje_con_estadisticas(tipster, datos_tipster):
