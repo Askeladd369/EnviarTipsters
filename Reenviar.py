@@ -428,15 +428,12 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
             semaforo_emoji = "🔴"
         mensaje += f"{semaforo_emoji} Efectividad: {efectividad}%\n"
 
-    # Agregar el balance (bank actual)
+    # Agregar el balance (bank actual) con símbolo + o -
     bank_actual = datos_tipster.get('bank_actual')
-    if bank_actual is not None:
-        # Formatear el mensaje de bank actual con el símbolo correspondiente
+    if bank_actual is not None and not math.isnan(bank_actual):
+        # Asignar símbolo + si el bank actual es positivo
         simbolo = "+" if bank_actual > 0 else ""
-        
-        # Mostrar el valor de bank_actual tal como está, añadiendo el símbolo si es positivo
-        stats_message += f"💰 Balance: {simbolo}${bank_actual:.2f} 💵\n"
-
+        mensaje += f"💰 Balance: {simbolo}${bank_actual:,.2f}\n"
 
     # Agregar el record en el nuevo formato (9 ✅ - 1 ❌)
     victorias = datos_tipster.get('victorias')
@@ -446,9 +443,11 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
     victorias = int(victorias) if victorias is not None and not math.isnan(victorias) else 0
     derrotas = int(derrotas) if derrotas is not None and not math.isnan(derrotas) else 0
 
-    mensaje += f"📊 Récord: {victorias} ✅ - {derrotas} ❌"
+    if victorias or derrotas:  # Solo mostrar si hay victorias o derrotas
+        mensaje += f"📊 Récord: {victorias} ✅ - {derrotas} ❌"
 
     return mensaje.strip()
+
 
 
 # Función para agregar la marca de agua a la imagen
