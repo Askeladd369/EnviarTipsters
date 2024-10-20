@@ -428,29 +428,25 @@ def generar_mensaje_con_estadisticas(tipster, datos_tipster):
             semaforo_emoji = "🔴"
         mensaje += f"{semaforo_emoji} Efectividad: {efectividad}%\n"
 
-    # Agregar el balance (bank actual) con símbolo + o -
+    # Agregar el balance (bank actual)
     bank_actual = datos_tipster.get('bank_actual')
-    
     if bank_actual is not None:
-            # Formatear el mensaje de bank actual con el símbolo correspondiente
-            simbolo = "+" if bank_actual > 0 else ""
-            
-            # Mostrar el valor de bank_actual tal como está, añadiendo el símbolo si es positivo
-            stats_message += f"💰 Balance: {simbolo}${bank_actual:.2f} 💵\n"
+        # Formatear el mensaje de bank actual con el símbolo correspondiente
+        simbolo = "+" if bank_actual > 0 else ""
+        
+        # Mostrar el valor de bank_actual tal como está, añadiendo el símbolo si es positivo
+        stats_message += f"💰 Balance: {simbolo}${bank_actual:.2f} 💵\n"
 
-    # Agregar el record en el nuevo formato (9 ✅ - 1 ❌) solo si hay datos
+
+    # Agregar el record en el nuevo formato (9 ✅ - 1 ❌)
     victorias = datos_tipster.get('victorias')
     derrotas = datos_tipster.get('derrotas')
 
     # Manejar NaN para victorias y derrotas
-    victorias = int(victorias) if victorias is not None and not math.isnan(victorias) else None
-    derrotas = int(derrotas) if derrotas is not None and not math.isnan(derrotas) else None
+    victorias = int(victorias) if victorias is not None and not math.isnan(victorias) else 0
+    derrotas = int(derrotas) if derrotas is not None and not math.isnan(derrotas) else 0
 
-    # Solo agregar el récord si ambos valores no son None
-    if victorias is not None or derrotas is not None:
-        victorias_str = f"{victorias} ✅" if victorias is not None else "0 ✅"
-        derrotas_str = f"{derrotas} ❌" if derrotas is not None else "0 ❌"
-        mensaje += f"📊 Récord: {victorias_str} - {derrotas_str}\n"
+    mensaje += f"📊 Récord: {victorias} ✅ - {derrotas} ❌"
 
     return mensaje.strip()
 
